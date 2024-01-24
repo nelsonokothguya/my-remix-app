@@ -1,32 +1,48 @@
-import { cssBundleHref } from "@remix-run/css-bundle";
-import type { LinksFunction } from "@remix-run/node";
 import {
   Links,
-  LiveReload,
   Meta,
   Outlet,
   Scripts,
-  ScrollRestoration,
+  Form,
+  useActionData,
 } from "@remix-run/react";
+import type { ActionFunctionArgs } from "@remix-run/node";
+import { getAiAssistant } from "~/openai.mjs";
 
-export const links: LinksFunction = () => [
-  ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
-];
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const prompt = formData.get("input");
+  const response = await getAiAssistant(prompt);
+  return response;
+}
 
 export default function App() {
+  const response = useActionData<typeof action>();
   return (
-    <html lang="en">
+    // eslint-disable-next-line jsx-a11y/html-has-lang
+    <html>
       <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="data:image/x-icon;base64,AA" />
         <Meta />
         <Links />
       </head>
       <body>
+        <Form method="post">
+          <label>
+            <span>Add Prompt</span>
+            <textarea name="input" />
+          </label>
+          <button type="submit">Generate with AI</button>
+        </Form>
+        {response && (
+          <p>
+            <strong>AI Response:</strong> {response}
+          </p>
+        )}
+
         <Outlet />
-        <ScrollRestoration />
+
         <Scripts />
-        <LiveReload />
       </body>
     </html>
   );
